@@ -1,0 +1,11 @@
+{
+  "name": "healthcare",
+  "version": "1.0.0",
+  "description": "Health care website focused for senior citizens",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Paveen, Vaibhav",
+  "license": "ISC"
+}
