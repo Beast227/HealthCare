@@ -7,8 +7,6 @@ async function getURL() {
   return process.env.MONGODB_URL;
 }
 
-
-
 const connectDB = async () => {
     try {
         const uri = await getURL();
@@ -18,7 +16,5 @@ const connectDB = async () => {
         console.error("ERROR : ", error)
     }
 }
-
-connectDB();
 
 export default connectDB
