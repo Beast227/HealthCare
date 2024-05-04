@@ -25,3 +25,7 @@ To run this project, you'll need the following:
 
    ```bash
    npm install -D prettier
+3. **Install Dependencies:**
+
+   ```bash
+   npm install mongoose dotenv express
