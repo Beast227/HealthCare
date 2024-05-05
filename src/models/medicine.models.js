@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 const medicineSchema = new mongoose.Schema({
     medName: {
@@ -24,6 +25,11 @@ const medicineSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Doctor'
     }
+},
+{
+    timestamps: true
 })
+
+medicineSchema.plugin(mongooseAggregatePaginate)
 
 export const Medicine = mongoose.model("Medicine", medicineSchema)
