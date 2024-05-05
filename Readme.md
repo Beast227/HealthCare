@@ -28,4 +28,4 @@ To run this project, you'll need the following:
 3. **Install Dependencies:**
 
    ```bash
-   npm install mongoose dotenv express
+   npm install mongoose dotenv express cookie-parser cors

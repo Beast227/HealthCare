@@ -10,8 +10,8 @@ async function getURL() {
 const connectDB = async () => {
     try {
         const uri = await getURL();
-       const connectionInstance = await mongoose.connect(`${uri}/${DB_NAME}`)
-       console.log(`\nMongoDB connected !!`)
+        const connectionInstance = await mongoose.connect(`${uri}/${DB_NAME}`)
+        console.log(`\nMongoDB connected !!`)
     } catch (error) {
         console.error("ERROR : ", error)
     }
