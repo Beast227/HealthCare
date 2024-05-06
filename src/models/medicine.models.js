@@ -7,7 +7,7 @@ const medicineSchema = new mongoose.Schema({
         default: null
     },
     medDetails: {
-        type: {},
+        type: object,
         required: true,
         properties: {
             description: {
@@ -24,6 +24,12 @@ const medicineSchema = new mongoose.Schema({
     doctor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Doctor'
+    },
+    alarm: 
+    {
+        type: Boolean,
+        required: true,
+        default: false
     }
 },
 {
