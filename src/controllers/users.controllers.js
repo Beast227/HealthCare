@@ -1,6 +1,6 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { apiError } from "../utils/apiError.js"
-import User from "../models/users.models.js"
+import { User } from "../models/users.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { apiResponse } from "../utils/apiResponse.js"
 
@@ -15,7 +15,6 @@ const registerUser = asyncHandler( async (req, res) => {
     // return res
 
     const {username, email, password} = req.body
-    console.log("email : ", email)
 
     if(
         [username, email, password].some((field) =>
@@ -24,7 +23,7 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new apiError(400, "All fields are required")
     }
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{ username }, { email }]
     })
 
@@ -32,17 +31,28 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new apiError(409, "User with email or username already exists")
     }
 
-    const healthLocalPath = req.files?.HealthInfo[0]?.path;
+   // const healthLocalPath = req.files?.healthInfo[0]?.path;
+
+    let healthLocalPath;
+    if(req.files && Array.isArray(req.files.healthInfo) && req.files.healthInfo.length > 0){
+        healthLocalPath = req.files.healthInfo[0].path
+    }
 
     // if(!healthLocalPath) {
     //     throw new apiError(400, "Health file is required")
     // }
+    console.log(req.files)
+    console.log(healthLocalPath)
 
     const health = await uploadOnCloudinary(healthLocalPath)
 
+    if(!health){
+        throw new apiError(400, "Something went wrong while uploading image")
+    }
+
     const user = await User.create({
         username: username.toLowerCase(),
-        HealthInfo : Health?.url || "",
+        healthInfo: health,
         email,
         password
     })

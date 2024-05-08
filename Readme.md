@@ -27,5 +27,7 @@ To run this project, you'll need the following:
    npm install -D prettier
 3. **Install Dependencies:**
 
+Open your terminal or command prompt and use the cd command to navigate to the directory where your package.json file resides.
+
    ```bash
-   npm install mongoose dotenv express cookie-parser cors vite
+   npm install

@@ -7,9 +7,9 @@ const router = Router()
 router.route("/signup").post(
     upload.fields([
         {
-            name : "HealthInfo",
+            name : "healthInfo",
             maxCount: 1
-        },
+        }
     ]),
     registerUser
 )
