@@ -24,6 +24,9 @@ const userSchema = new Schema({
         },
         healthInfo: {
             type: String
+        },
+        refreshToken: {
+            type: String
         }
     },
     {
