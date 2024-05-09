@@ -7,7 +7,7 @@ const medicineSchema = new mongoose.Schema({
         default: null
     },
     medDetails: {
-        type: object,
+        type: {},
         required: true,
         properties: {
             description: {
