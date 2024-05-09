@@ -3,6 +3,8 @@ import { apiError } from "../utils/apiError.js"
 import { User } from "../models/users.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { apiResponse } from "../utils/apiResponse.js"
+import jwt from "jsonwebtoken";
+import { Medicine } from "../models/medicine.models.js"
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -47,28 +49,8 @@ const registerUser = asyncHandler( async (req, res) => {
         throw new apiError(409, "User with email or username already exists")
     }
 
-   // const healthLocalPath = req.files?.healthInfo[0]?.path;
-
-    let healthLocalPath;
-    if(req.files && Array.isArray(req.files.healthInfo) && req.files.healthInfo.length > 0){
-        healthLocalPath = req.files.healthInfo[0].path
-    }
-
-    // if(!healthLocalPath) {
-    //     throw new apiError(400, "Health file is required")
-    // }
-    console.log(req.files)
-    console.log(healthLocalPath)
-
-    const health = await uploadOnCloudinary(healthLocalPath)
-
-    if(!health){
-        throw new apiError(400, "Something went wrong while uploading image")
-    }
-
     const user = await User.create({
         username: username.toLowerCase(),
-        healthInfo: health,
         email,
         password
     })
@@ -162,13 +144,218 @@ const logOutUser = asyncHandler( async(req, res) => {
 
     return res
     .status(200)
-    .clearCookie("accessToken", options)
-    .clearCookie("refreshToken", options)
+    .clearCookie("accesstoken", options)
+    .clearCookie("refreshtoken", options)
     .json(new apiResponse(200, {}, "User logged Out"))
+})
+
+const refreshAccessToken = asyncHandler( async (req, res) => {
+    try {
+        const IncomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+        
+        if(!IncomingRefreshToken) {
+            throw new apiError(401, "Unautorized request")
+        }
+    
+        const decodedToken = jwt.verify(
+            IncomingRefreshToken,
+            process.env.REFRESH_TOKEN_SECRET
+        )
+    
+        const user = await User.findById(decodedToken?._id)
+    
+        if(!user) {
+            throw new apiError(401, "Invalid refresh token")
+        }
+    
+        if(IncomingRefreshToken !== user?.refreshToken) {
+            throw new apiError(401, "Refresh token is expired or used")
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newrefreshToken, options)
+        .json(
+            new apiResponse(
+                200, 
+                {
+                    accessToken, refreshToken: newrefreshToken 
+                },
+                "Access token refreshed"
+            )
+        )
+    } catch (error) {
+        throw new apiError(401, error?.message || "Invalid refresh token")
+    }
+
+})
+
+const changeCurrentPassworrd = asyncHandler(async(req, res) => {
+    const {oldPasword, newPasswrod} = req.body
+
+    const user = await User.findById(req.user?._id)
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPasword)
+
+    if(!isPasswordCorrect){
+        throw new apiError(400, "Invalid old password")
+    }
+
+    user.password = newPasswrod
+    await user.save({validateBeforeSave: false})
+
+    return res
+    .status(200)
+    .json(new apiResponse(200, {}, "Password changed successfully"))
+})
+
+const getCurrentUser = asyncHandler(async(req, res) =>{
+    return res
+    .status(200)
+    .json(200, req.user, "Current user fetched successfully")
+})
+
+const updateAccountDetails = asyncHandler(async(req, res) => {
+    const {email} = req.body
+
+    if(!email) {
+        throw new apiError(400, "All fields are required")
+    }
+
+    User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                email: email
+            }
+        },
+        {new: true}
+    ).select("-password -refreshToken")
+
+    return res
+    .status(200)
+    .json(new apiResponse(200, user, "Account details updated successfully"))
+})
+
+//continue with the video 
+const updateUserMedicinePhoto = asyncHandler(async(req, res)=> {
+    const medicineLocalPath = req.file?.path
+
+    if(!medicineLocalPath) {
+        throw new apiError(400, "Avatar file is missing")
+    }
+
+    const medicine = await uploadOnCloudinary(medicineLocalPath)
+
+    if(!medicine) {
+        throw new apiError(400, "Error while uploading on avatar")
+    }
+
+    await Medicine.findByIdAndUpdate(
+        req.user?._id,
+        {
+
+        },
+        {new: true}
+    ).select("-password")
+})
+
+const doctorDetails = asyncHandler(async(req, res) => {
+    const user = req.user
+
+    const {doctorName, hospitalName, doctorPhone, hospitalPhone} = req.body
+
+    if(!user) {
+        throw new apiError(401, "Login First")
+    }
+
+    if(
+        [doctorName, hospitalName, doctorPhone, hospitalPhone].some((field) =>
+            field?.trim() === "")
+    ) {
+        throw new apiError(400, "All fields are required")
+    }
+
+    const userIsValid = User.findOne(username)
+
+    if(!userIsValid) {
+        throw new apiError(401, "Login First")
+    }
+
+})
+
+const medicineDetails = asyncHandler(async(req, res) =>{
+    const {username, medName, medDetails} = req.body
+    const user = req.user
+    const doctor = req.doctor
+
+    if(!user) {
+        throw new apiError(401, "Login First")
+    }
+
+    if(
+        [username, medName, medDetails, doctor].some((field) =>
+            field?.trim() === "")
+    ) {
+        throw new apiError(400, "All fields are required")
+    }
+
+    const userIsValid = User.findOne(username)
+
+    if(!userIsValid) {
+        throw new apiError(401, "Login First")
+    }
+
+    let medicinePhotoPath;
+    if(req.files && Array.isArray(req.files.medicineImage) && req.files.medicineImage.length > 0){
+        medicinePhotoPath = req.files.medicineImage[0].path
+    }
+
+    console.log(req.files)
+    console.log(medicinePhotoPath)
+
+    const medicineUrl = await uploadOnCloudinary(medicinePhotoPath)
+
+    if(!medicineUrl){
+        throw new apiError(400, "Something went wrong while uploading image")
+    }
+
+    const medicine = await Medicine.create({
+        medName,
+        medDetails,
+        doctor,
+        user,
+        medicineImage: medicineUrl
+    })
+
+    const createdMedicine = await User.findById(medicine._id)
+
+    if(!createdMedicine) {
+        throw new apiError(401, "Something went wrong while creating medicine model")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new apiResponse(200, medicine, "Medicine details are saved")
+    )
+
 })
 
 export {
     registerUser,
     loginUser,
-    logOutUser
+    logOutUser,
+    refreshAccessToken,
+    changeCurrentPassworrd,
+    getCurrentUser,
+    updateAccountDetails,
+    medicineDetails
 }

@@ -25,11 +25,12 @@ const medicineSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Doctor'
     },
-    alarm: 
-    {
-        type: Boolean,
-        required: true,
-        default: false
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    medicineImage: {
+        type: String
     }
 },
 {
