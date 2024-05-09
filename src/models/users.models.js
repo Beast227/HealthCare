@@ -22,6 +22,14 @@ const userSchema = new Schema({
             type: String,
             required: [true, 'Password is required']
         },
+        userPhone: {
+            type: Number,
+            required: [true, "User phone is required"]
+        },
+        careTakerPhone: {
+            type: Number,
+            required: [true, "careTaker phone is required"]
+        },
         refreshToken: {
             type: String
         }

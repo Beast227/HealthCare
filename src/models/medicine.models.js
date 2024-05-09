@@ -6,20 +6,8 @@ const medicineSchema = new mongoose.Schema({
         type: String,
         default: null
     },
-    medDetails: {
-        type: {},
-        required: true,
-        properties: {
-            description: {
-                type: String
-            },
-            dosage: {
-                type: Number
-            },
-            sideEffects: {
-                type: String
-            }
-        }
+    dosage: {
+        type: String
     },
     doctor: {
         type: mongoose.Schema.Types.ObjectId,

@@ -1,10 +1,13 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { apiError } from "../utils/apiError.js"
 import { User } from "../models/users.models.js"
+import { Doctor } from "../models/doctor.models.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { apiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken";
 import { Medicine } from "../models/medicine.models.js"
+import pkg from 'twilio';
+const { Twilio } = pkg;
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -32,7 +35,7 @@ const registerUser = asyncHandler( async (req, res) => {
     // check for user creation
     // return res
 
-    const {username, email, password} = req.body
+    const {username, email, password, userPhone, careTakerPhone} = req.body
 
     if(
         [username, email, password].some((field) =>
@@ -52,7 +55,9 @@ const registerUser = asyncHandler( async (req, res) => {
     const user = await User.create({
         username: username.toLowerCase(),
         email,
-        password
+        password,
+        careTakerPhone,
+        userPhone
     })
 
     const createdUser = await User.findById(user._id).select(
@@ -244,7 +249,7 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
     .json(new apiResponse(200, user, "Account details updated successfully"))
 })
 
-//continue with the video 
+//continue with the video later 
 const updateUserMedicinePhoto = asyncHandler(async(req, res)=> {
     const medicineLocalPath = req.file?.path
 
@@ -269,7 +274,6 @@ const updateUserMedicinePhoto = asyncHandler(async(req, res)=> {
 
 const doctorDetails = asyncHandler(async(req, res) => {
     const user = req.user
-
     const {doctorName, hospitalName, doctorPhone, hospitalPhone} = req.body
 
     if(!user) {
@@ -289,19 +293,75 @@ const doctorDetails = asyncHandler(async(req, res) => {
         throw new apiError(401, "Login First")
     }
 
+    const doctor = Doctor.create({
+        doctorName,
+        hospitalName,
+        doctorPhone,
+        hospitalPhone
+    })
+
+    const createdDoctor = await Doctor.findById(doctor._id)
+
+    if(!createdDoctor) {
+        throw new apiError(401, "Something went wrong while creating doctor details")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new apiResponse(200, doctor, "Doctor created successfully")
+    )
+
+})
+
+const getdoctorDetails = asyncHandler(async (req, res) => {
+
+    const user = req.user
+
+    const doctor = await Doctor.findOne(user)
+
+    if(!isDoctorValid) {
+        throw new apiError(401, "Unauthorized access")
+    }
+
+    return res.doctor
+    
+
+})
+
+const messageApi = asyncHandler(async(req, res) => {
+
+    const user = req.user
+    const medicine = req.medicine
+
+    const medicine_name = medicine
+    const phone_no = user.careTakerPhone
+
+    const accountSid = "ACd52e3bf4604799a1f5e2af1e060f57f8";
+    const authToken = "05d07c649d7c45162bf7af568cc38ba2";
+    const client = new Twilio(accountSid, authToken);
+
+    client.messages
+    .create({
+        body: `Time to take the medicine ${medicine_name}`,
+        
+        from: '+13142074644',
+        to: phone_no
+    })
+    .then(message => console.log(message.sid));
 })
 
 const medicineDetails = asyncHandler(async(req, res) =>{
-    const {username, medName, medDetails} = req.body
-    const user = req.user
-    const doctor = req.doctor
+    const {username, medName, dosage} = req.body
+    const user = req.User
+    const doctor = req.Doctor
 
     if(!user) {
         throw new apiError(401, "Login First")
     }
 
     if(
-        [username, medName, medDetails, doctor].some((field) =>
+        [username, medName, dosage].some((field) =>
             field?.trim() === "")
     ) {
         throw new apiError(400, "All fields are required")
@@ -313,26 +373,26 @@ const medicineDetails = asyncHandler(async(req, res) =>{
         throw new apiError(401, "Login First")
     }
 
-    let medicinePhotoPath;
-    if(req.files && Array.isArray(req.files.medicineImage) && req.files.medicineImage.length > 0){
-        medicinePhotoPath = req.files.medicineImage[0].path
-    }
+    // let medicinePhotoPath;
+    // if(req.files && Array.isArray(req.files.medicineImage) && req.files.medicineImage.length > 0){
+    //     medicinePhotoPath = req.files.medicineImage[0].path
+    // }
 
-    console.log(req.files)
-    console.log(medicinePhotoPath)
+    // console.log(req.files)
+    // console.log(medicinePhotoPath)
 
-    const medicineUrl = await uploadOnCloudinary(medicinePhotoPath)
+    // const medicineUrl = await uploadOnCloudinary(medicinePhotoPath)
 
-    if(!medicineUrl){
-        throw new apiError(400, "Something went wrong while uploading image")
-    }
+    // if(!medicineUrl){
+    //     throw new apiError(400, "Something went wrong while uploading image")
+    // }
 
     const medicine = await Medicine.create({
         medName,
-        medDetails,
+        dosage,
         doctor,
         user,
-        medicineImage: medicineUrl
+        medicineImage: medicineUrl || ""
     })
 
     const createdMedicine = await User.findById(medicine._id)
@@ -357,5 +417,8 @@ export {
     changeCurrentPassworrd,
     getCurrentUser,
     updateAccountDetails,
-    medicineDetails
+    medicineDetails,
+    doctorDetails,
+    getdoctorDetails,
+    messageApi
 }
