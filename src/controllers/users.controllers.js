@@ -347,10 +347,10 @@ const messageApi = asyncHandler(async(req, res) => {
 
     client.messages
     .create({
-        body: `Time to take the medicine }`,
+        body: `Time to take the medicine ${user.username}`,
         
         from: '+13142074644',
-        to: 'phone_no'
+        to: '+91' + phone_no
     })
     .then(message => console.log(message.sid));
 })
