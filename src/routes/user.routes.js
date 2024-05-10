@@ -23,7 +23,7 @@ router.route("/refreshToken").post(refreshAccessToken)
 router.route("/changePassword").post(changeCurrentPassworrd)
 router.route("/medDetails").post(medicineDetails)
 router.route("/updateDetails").post()
-router.route("/SendSms").post(messageApi)
+router.route("/SendSms").get(messageApi)
 
 //get routes
 router.route("/getDoctorDetails").get(getdoctorDetails)

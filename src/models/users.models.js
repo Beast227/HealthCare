@@ -30,6 +30,12 @@ const userSchema = new Schema({
             type: Number,
             required: [true, "careTaker phone is required"]
         },
+        medName: {
+            type: String
+        },
+        dosage: {
+            type: String
+        },
         refreshToken: {
             type: String
         }

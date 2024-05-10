@@ -325,53 +325,53 @@ const getdoctorDetails = asyncHandler(async (req, res) => {
     }
 
     return res.doctor
-    
-
 })
 
 const messageApi = asyncHandler(async(req, res) => {
 
-    const user = req.user
-    const medicine = req.medicine
+    const {username} = req.body
 
-    const medicine_name = medicine
+    const user = await User.findOne({username: username}).select("-password")
+
+    if(!user) {
+        throw new apiError(401, "Unauthorized request")
+    }
+
     const phone_no = user.careTakerPhone
+    console.log(user)
+    console.log(phone_no)
 
-    const accountSid = process.env.ACCOUNT_SID;
-    const authToken =  process.env.AUTH_TOKEN;
+    const accountSid = "ACd52e3bf4604799a1f5e2af1e060f57f8";
+    const authToken =  "28ae0ddd4bf3612e006e8c6d1a8b725a";
     const client = new Twilio(accountSid, authToken);
 
     client.messages
     .create({
-        body: `Time to take the medicine ${medicine_name}`,
+        body: `Time to take the medicine }`,
         
         from: '+13142074644',
-        to: phone_no
+        to: 'phone_no'
     })
     .then(message => console.log(message.sid));
 })
 
 const medicineDetails = asyncHandler(async(req, res) =>{
-    const {username, medName, dosage} = req.body
-    const user = req.User
-    const doctor = req.Doctor
-
-    if(!user) {
-        throw new apiError(401, "Login First")
-    }
-
+    const {medName, dosage, username} = req.body
+    console.log(username)
     if(
-        [username, medName, dosage].some((field) =>
+        [medName, dosage].some((field) =>
             field?.trim() === "")
     ) {
         throw new apiError(400, "All fields are required")
     }
 
-    const userIsValid = User.findOne(username)
+    const user = await User.findOne(username)
 
-    if(!userIsValid) {
+    if(!user) {
         throw new apiError(401, "Login First")
     }
+
+
 
     // let medicinePhotoPath;
     // if(req.files && Array.isArray(req.files.medicineImage) && req.files.medicineImage.length > 0){
@@ -387,19 +387,16 @@ const medicineDetails = asyncHandler(async(req, res) =>{
     //     throw new apiError(400, "Something went wrong while uploading image")
     // }
 
-    const medicine = await Medicine.create({
-        medName,
-        dosage,
-        doctor,
-        user,
-        medicineImage: medicineUrl || ""
-    })
-
-    const createdMedicine = await User.findById(medicine._id)
-
-    if(!createdMedicine) {
-        throw new apiError(401, "Something went wrong while creating medicine model")
-    }
+    const medicine = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                medName: medName,
+                dosage: dosage
+            }
+        },
+        {new: true}
+    ).select("-password")
 
     return res
     .status(200)
