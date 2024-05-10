@@ -337,8 +337,8 @@ const messageApi = asyncHandler(async(req, res) => {
     const medicine_name = medicine
     const phone_no = user.careTakerPhone
 
-    const accountSid = "ACd52e3bf4604799a1f5e2af1e060f57f8";
-    const authToken = "05d07c649d7c45162bf7af568cc38ba2";
+    const accountSid = process.env.ACCOUNT_SID;
+    const authToken =  process.env.AUTH_TOKEN;
     const client = new Twilio(accountSid, authToken);
 
     client.messages
