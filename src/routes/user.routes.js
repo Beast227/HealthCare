@@ -20,8 +20,8 @@ router.route("/signup").post(
 router.route("/login").post(loginUser)
 router.route("/logout").post(verifyJwt, logOutUser)
 router.route("/refreshToken").post(refreshAccessToken)
-router.route("/changePassword").post(changeCurrentPassworrd)
-router.route("/medDetails").post(medicineDetails)
+router.route("/changePassword").post(verifyJwt, changeCurrentPassworrd)
+router.route("/medDetails").post(verifyJwt, medicineDetails)
 router.route("/updateDetails").post()
 
 //get routes
