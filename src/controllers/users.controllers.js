@@ -25,6 +25,17 @@ const generateAccessAndRefreshTokens = async(userId) => {
     }
 }
 
+const getCurrentUserMethod = async(req, res) => {
+    try {
+        const {username} = req.body
+        const user = await User.findOne({username}).select("-password -refreshToken")
+        return user
+        
+    } catch (error) {
+        throw new apiError(500, "Something went wrong while finding user")
+    }
+}
+
 const registerUser = asyncHandler( async (req, res) => {
     // get user details from frontend
     // validation - not empty
@@ -222,9 +233,17 @@ const changeCurrentPassworrd = asyncHandler(async(req, res) => {
 })
 
 const getCurrentUser = asyncHandler(async(req, res) =>{
+    
+    const user = req.user
+    console.log(req.user)
+
+    if(!user) {
+        throw new apiError(401, "User not found")
+    }
+
     return res
     .status(200)
-    .json(200, req.user, "Current user fetched successfully")
+    .json(200, user, "Current user fetched successfully")
 })
 
 const updateAccountDetails = asyncHandler(async(req, res) => {
@@ -273,7 +292,6 @@ const updateUserMedicinePhoto = asyncHandler(async(req, res)=> {
 })
 
 const doctorDetails = asyncHandler(async(req, res) => {
-    const user = req.user
     const {doctorName, hospitalName, doctorPhone, hospitalPhone} = req.body
 
     if(!user) {
@@ -356,8 +374,7 @@ const messageApi = asyncHandler(async(req, res) => {
 })
 
 const medicineDetails = asyncHandler(async(req, res) =>{
-    const {medName, dosage, username} = req.body
-    console.log(username)
+    const {medName, dosage} = req.body
     if(
         [medName, dosage].some((field) =>
             field?.trim() === "")
@@ -365,7 +382,8 @@ const medicineDetails = asyncHandler(async(req, res) =>{
         throw new apiError(400, "All fields are required")
     }
 
-    const user = await User.findOne(username)
+    const user = req.user
+    console.log(user)
 
     if(!user) {
         throw new apiError(401, "Login First")
@@ -387,16 +405,12 @@ const medicineDetails = asyncHandler(async(req, res) =>{
     //     throw new apiError(400, "Something went wrong while uploading image")
     // }
 
-    const medicine = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                medName: medName,
-                dosage: dosage
-            }
-        },
-        {new: true}
-    ).select("-password")
+    const medicine = await Medicine.create(
+            {
+                medName,
+                dosage,
+                user
+            })
 
     return res
     .status(200)
