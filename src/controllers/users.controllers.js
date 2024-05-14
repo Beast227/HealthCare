@@ -355,17 +355,13 @@ const getdoctorDetails = asyncHandler(async (req, res) => {
 
 const messageApi = asyncHandler(async(req, res) => {
 
-    const {username} = req.body
-
-    const user = await User.findOne({username: username}).select("-password")
+    const user = req.user
 
     if(!user) {
-        throw new apiError(401, "Unauthorized request")
+        throw new apiError(401, "Login required")
     }
 
     const phone_no = user.careTakerPhone
-    console.log(user)
-    console.log(phone_no)
 
     const accountSid = process.env.ACCOUNT_SID;
     const authToken =  process.env.AUTH_TOKEN;

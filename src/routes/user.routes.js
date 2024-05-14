@@ -26,7 +26,7 @@ router.route("/doctorDetails").post(verifyJwt, doctorDetails)
 router.route("/updateDetails").post()
 
 //get routes
-router.route("/SendSms").get(messageApi)
+router.route("/SendSms").get(verifyJwt, messageApi)
 router.route("/getDoctorDetails").get(verifyJwt, getdoctorDetails)
 router.route("/getMedicineDetails").get()
 router.route("/getUser").get(verifyJwt, getCurrentUser)
