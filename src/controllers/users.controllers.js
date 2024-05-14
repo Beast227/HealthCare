@@ -9,6 +9,7 @@ import { Medicine } from "../models/medicine.models.js"
 import pkg from 'twilio';
 const { Twilio } = pkg;
 
+// need to unserstand the concept
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
         const user = await User.findById(userId)
@@ -22,17 +23,6 @@ const generateAccessAndRefreshTokens = async(userId) => {
 
     } catch (error) {
         throw new apiError(500, "Something went wrong while generating refresh and access token")
-    }
-}
-
-const getCurrentUserMethod = async(req, res) => {
-    try {
-        const {username} = req.body
-        const user = await User.findOne({username}).select("-password -refreshToken")
-        return user
-        
-    } catch (error) {
-        throw new apiError(500, "Something went wrong while finding user")
     }
 }
 
@@ -165,6 +155,7 @@ const logOutUser = asyncHandler( async(req, res) => {
     .json(new apiResponse(200, {}, "User logged Out"))
 })
 
+// need to understand the concept
 const refreshAccessToken = asyncHandler( async (req, res) => {
     try {
         const IncomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
@@ -272,7 +263,7 @@ const updateUserMedicinePhoto = asyncHandler(async(req, res)=> {
     const medicineLocalPath = req.file?.path
 
     if(!medicineLocalPath) {
-        throw new apiError(400, "Avatar file is missing")
+        throw new apiError(400, "Medicine file is missing")
     }
 
     const medicine = await uploadOnCloudinary(medicineLocalPath)
@@ -293,6 +284,21 @@ const updateUserMedicinePhoto = asyncHandler(async(req, res)=> {
 const doctorDetails = asyncHandler(async(req, res) => {
     const {doctorName, hospitalName, doctorPhone, hospitalPhone} = req.body
 
+    const user = req.user
+    const doctor = await Doctor.findOne(doctorPhone)
+
+    if(doctor) {
+
+        doctor.user.push(user._id)
+        doctor.save()
+
+        return res
+        .status(200)
+        .json(
+            new apiResponse(200, doctor, "Doctor was already present")
+        )
+    }
+
     if(!user) {
         throw new apiError(401, "Login First")
     }
@@ -304,17 +310,12 @@ const doctorDetails = asyncHandler(async(req, res) => {
         throw new apiError(400, "All fields are required")
     }
 
-    const userIsValid = User.findOne(username)
-
-    if(!userIsValid) {
-        throw new apiError(401, "Login First")
-    }
-
-    const doctor = Doctor.create({
+    doctor = Doctor.create({
         doctorName,
         hospitalName,
         doctorPhone,
-        hospitalPhone
+        hospitalPhone,
+        user: user._id
     })
 
     const createdDoctor = await Doctor.findById(doctor._id)
@@ -335,13 +336,21 @@ const getdoctorDetails = asyncHandler(async (req, res) => {
 
     const user = req.user
 
+    if(!user) {
+        throw new apiError(401, "Login first")
+    }
+
     const doctor = await Doctor.findOne(user)
 
-    if(!isDoctorValid) {
+    if(!doctor) {
         throw new apiError(401, "Unauthorized access")
     }
 
-    return res.doctor
+    return res
+    .status(200)
+    .json(
+        new apiResponse(200, "Doctor details are present")
+    )
 })
 
 const messageApi = asyncHandler(async(req, res) => {
@@ -358,8 +367,8 @@ const messageApi = asyncHandler(async(req, res) => {
     console.log(user)
     console.log(phone_no)
 
-    const accountSid = "ACd52e3bf4604799a1f5e2af1e060f57f8";
-    const authToken =  "28ae0ddd4bf3612e006e8c6d1a8b725a";
+    const accountSid = process.env.ACCOUNT_SID;
+    const authToken =  process.env.AUTH_TOKEN;
     const client = new Twilio(accountSid, authToken);
 
     client.messages
@@ -388,26 +397,18 @@ const medicineDetails = asyncHandler(async(req, res) =>{
         throw new apiError(401, "Login First")
     }
 
+    let medicinePhotoPath;
+    if(req.files && Array.isArray(req.files.medicineImage) && req.files.medicineImage.length > 0){
+        medicinePhotoPath = req.files.medicineImage[0].path
+    }
 
-
-    // let medicinePhotoPath;
-    // if(req.files && Array.isArray(req.files.medicineImage) && req.files.medicineImage.length > 0){
-    //     medicinePhotoPath = req.files.medicineImage[0].path
-    // }
-
-    // console.log(req.files)
-    // console.log(medicinePhotoPath)
-
-    // const medicineUrl = await uploadOnCloudinary(medicinePhotoPath)
-
-    // if(!medicineUrl){
-    //     throw new apiError(400, "Something went wrong while uploading image")
-    // }
+    const medicineUrl = await uploadOnCloudinary(medicinePhotoPath)
 
     const medicine = await Medicine.create(
             {
                 medName,
                 dosage,
+                medicineImage: medicineUrl || "",
                 user
             })
 
