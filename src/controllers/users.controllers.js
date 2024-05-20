@@ -310,7 +310,7 @@ const doctorDetails = asyncHandler(async(req, res) => {
         throw new apiError(400, "All fields are required")
     }
 
-    doctor = Doctor.create({
+    doctor = await Doctor.create({
         doctorName,
         hospitalName,
         doctorPhone,
