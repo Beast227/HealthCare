@@ -17,15 +17,7 @@ To run this project, you'll need the following:
 
 ## Installation
 
-1. **Install Nodemon:**
-
-   ```bash
-   npm install -D nodemon
-2. **Install Prettier:**
-
-   ```bash
-   npm install -D prettier
-3. **Install Dependencies:**
+**Install Dependencies:**
 
 Open your terminal or command prompt and use the cd command to navigate to the directory where your package.json file resides.
 
